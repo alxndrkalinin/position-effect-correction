@@ -4,7 +4,7 @@
 knit_output_format: github_document
 experiment:
   data_path: "../../position-effect-correction/3.correct/output"
-  input_structure: "{data_path}/subset_profiles_cc_corrected.{extension}"
+  input_structure: "{data_path}/subset_profiles_cc_corrected_jcp41.{extension}"
   extension: parquet
   external_metadata:
   # adds a dummy variable column named 'Metadata_dummy'
@@ -59,4 +59,5 @@ experiment:
     annotation_cols:
       - Metadata_JCP2022
       - Metadata_Well
+      - Metadata_Plate
       - Metadata_reference_or_other

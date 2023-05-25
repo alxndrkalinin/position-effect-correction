@@ -1,0 +1,47 @@
+knit_output_format: github_document
+experiment:
+  data_path: ../../position-effect-correction/3.correct/output
+  input_structure: '{data_path}/subset_profiles_cc_corrected_jcp41.{extension}'
+  extension: parquet
+  external_metadata: ~
+  add_dummy_metadata_column: yes
+  split_by_column: ~
+  significance_threshold: 0.05
+  parallel_workers: 8
+  aggregate_by: ~
+  filter_by: ~
+  reference_set:
+    Metadata_pert_type: negcon
+  random_seed: 42
+  background_type: ref
+  shuffle: no
+  shuffle_bad_groups_threshold: 0.1
+  shuffle_group: ~
+  shuffle_strata: ~
+  shuffle_exclude: ~
+  subsample_fraction: 1
+  subsample_pert_strata: ~
+  subsample_reference_strata: ~
+  similarity_method: cosine
+  sim_params:
+    drop_group:
+      Metadata_pert_type: poscon
+    reference:
+      Metadata_reference_or_other: reference
+    all_same_cols_ref: Metadata_dummy
+    all_same_cols_rep:
+    - Metadata_JCP2022
+    - Metadata_reference_or_other
+    all_different_cols_rep: Metadata_Well
+    any_different_cols_rep: ~
+    all_same_cols_rep_ref: ~
+    any_different_cols_non_rep: ~
+    all_same_cols_non_rep: ~
+    all_different_cols_non_rep: ~
+    all_same_cols_group: ~
+    any_different_cols_group: ~
+    annotation_cols:
+    - Metadata_JCP2022
+    - Metadata_Well
+    - Metadata_Plate
+    - Metadata_reference_or_other

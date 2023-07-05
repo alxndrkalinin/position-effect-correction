@@ -920,45 +920,45 @@ HTMLWidgets.widget({
       var height = instance.height || height;
       Plotly.relayout(el.id, {width: width, height: height});
     }
-  },  
-  
+  },
+
   renderValue: function(el, x, instance) {
-    
-    // Plotly.relayout() mutates the plot input object, so make sure to 
+
+    // Plotly.relayout() mutates the plot input object, so make sure to
     // keep a reference to the user-supplied width/height *before*
     // we call Plotly.plot();
     var lay = x.layout || {};
     instance.width = lay.width;
     instance.height = lay.height;
     instance.autosize = lay.autosize || true;
-    
-    /* 
+
+    /*
     / 'inform the world' about highlighting options this is so other
-    / crosstalk libraries have a chance to respond to special settings 
-    / such as persistent selection. 
+    / crosstalk libraries have a chance to respond to special settings
+    / such as persistent selection.
     / AFAIK, leaflet is the only library with such intergration
     / https://github.com/rstudio/leaflet/pull/346/files#diff-ad0c2d51ce5fdf8c90c7395b102f4265R154
     */
     var ctConfig = crosstalk.var('plotlyCrosstalkOpts').set(x.highlight);
-      
+
     if (typeof(window) !== "undefined") {
       // make sure plots don't get created outside the network (for on-prem)
       window.PLOTLYENV = window.PLOTLYENV || {};
       window.PLOTLYENV.BASE_URL = x.base_url;
-      
+
       // Enable persistent selection when shift key is down
       // https://stackoverflow.com/questions/1828613/check-if-a-key-is-down
       var persistOnShift = function(e) {
         if (!e) window.event;
-        if (e.shiftKey) { 
-          x.highlight.persistent = true; 
+        if (e.shiftKey) {
+          x.highlight.persistent = true;
           x.highlight.persistentShift = true;
         } else {
-          x.highlight.persistent = false; 
+          x.highlight.persistent = false;
           x.highlight.persistentShift = false;
         }
       };
-      
+
       // Only relevant if we haven't forced persistent mode at command line
       if (!x.highlight.persistent) {
         window.onmousemove = persistOnShift;
@@ -966,10 +966,10 @@ HTMLWidgets.widget({
     }
 
     var graphDiv = document.getElementById(el.id);
-    
+
     // TODO: move the control panel injection strategy inside here...
     HTMLWidgets.addPostRenderHandler(function() {
-      
+
       // lower the z-index of the modebar to prevent it from highjacking hover
       // (TODO: do this via CSS?)
       // https://github.com/ropensci/plotly/issues/956
@@ -979,60 +979,60 @@ HTMLWidgets.widget({
         modebars[i].style.zIndex = 1;
       }
     });
-      
+
       // inject a "control panel" holding selectize/dynamic color widget(s)
     if ((x.selectize || x.highlight.dynamic) && !instance.plotly) {
       var flex = document.createElement("div");
       flex.class = "plotly-crosstalk-control-panel";
       flex.style = "display: flex; flex-wrap: wrap";
-      
+
       // inject the colourpicker HTML container into the flexbox
       if (x.highlight.dynamic) {
         var pickerDiv = document.createElement("div");
-        
+
         var pickerInput = document.createElement("input");
         pickerInput.id = el.id + "-colourpicker";
         pickerInput.placeholder = "asdasd";
-        
+
         var pickerLabel = document.createElement("label");
         pickerLabel.for = pickerInput.id;
         pickerLabel.innerHTML = "Brush color&nbsp;&nbsp;";
-        
+
         pickerDiv.appendChild(pickerLabel);
         pickerDiv.appendChild(pickerInput);
         flex.appendChild(pickerDiv);
       }
-      
+
       // inject selectize HTML containers (one for every crosstalk group)
       if (x.selectize) {
         var ids = Object.keys(x.selectize);
-        
+
         for (var i = 0; i < ids.length; i++) {
           var container = document.createElement("div");
           container.id = ids[i];
           container.style = "width: 80%; height: 10%";
           container.class = "form-group crosstalk-input-plotly-highlight";
-          
+
           var label = document.createElement("label");
           label.for = ids[i];
           label.innerHTML = x.selectize[ids[i]].group;
           label.class = "control-label";
-          
+
           var selectDiv = document.createElement("div");
           var select = document.createElement("select");
           select.multiple = true;
-          
+
           selectDiv.appendChild(select);
           container.appendChild(label);
           container.appendChild(selectDiv);
           flex.appendChild(container);
         }
       }
-      
+
       // finally, insert the flexbox inside the htmlwidget container,
       // but before the plotly graph div
       graphDiv.parentElement.insertBefore(flex, graphDiv);
-      
+
       if (x.highlight.dynamic) {
         var picker = $("#" + pickerInput.id);
         var colors = x.highlight.color || [];
@@ -1062,20 +1062,20 @@ HTMLWidgets.widget({
         });
       }
     }
-    
+
     // if no plot exists yet, create one with a particular configuration
     if (!instance.plotly) {
-      
+
       var plot = Plotly.newPlot(graphDiv, x);
       instance.plotly = true;
-      
+
     } else if (x.layout.transition) {
-      
+
       var plot = Plotly.react(graphDiv, x);
-    
+
     } else {
-      
-      // this is essentially equivalent to Plotly.newPlot(), but avoids creating 
+
+      // this is essentially equivalent to Plotly.newPlot(), but avoids creating
       // a new webgl context
       // https://github.com/plotly/plotly.js/blob/2b24f9def901831e61282076cf3f835598d56f0e/src/plot_api/plot_api.js#L531-L532
 
@@ -1086,7 +1086,7 @@ HTMLWidgets.widget({
       graphDiv.layout = undefined;
       var plot = Plotly.newPlot(graphDiv, x);
     }
-    
+
     // Trigger plotly.js calls defined via `plotlyProxy()`
     plot.then(function() {
       if (HTMLWidgets.shinyMode) {
@@ -1095,8 +1095,8 @@ HTMLWidgets.widget({
           if (!gd) {
             throw new Error("Couldn't find plotly graph with id: " + msg.id);
           }
-          // This isn't an official plotly.js method, but it's the only current way to 
-          // change just the configuration of a plot 
+          // This isn't an official plotly.js method, but it's the only current way to
+          // change just the configuration of a plot
           // https://community.plot.ly/t/update-config-function/9057
           if (msg.method == "reconfig") {
             Plotly.react(gd, gd.data, gd.layout, msg.args);
@@ -1109,7 +1109,7 @@ HTMLWidgets.widget({
           Plotly[msg.method].apply(null, args);
         });
       }
-      
+
       // plotly's mapbox API doesn't currently support setting bounding boxes
       // https://www.mapbox.com/mapbox-gl-js/example/fitbounds/
       // so we do this manually...
@@ -1125,9 +1125,9 @@ HTMLWidgets.widget({
         var mapObj = graphDiv._fullLayout[id]._subplot.map;
         mapObj.fitBounds(args.bounds, args.options);
       }
-      
+
     });
-    
+
     // Attach attributes (e.g., "key", "z") to plotly event data
     function eventDataWithKey(eventData) {
       if (eventData === undefined || !eventData.hasOwnProperty("points")) {
@@ -1135,34 +1135,34 @@ HTMLWidgets.widget({
       }
       return eventData.points.map(function(pt) {
         var obj = {
-          curveNumber: pt.curveNumber, 
-          pointNumber: pt.pointNumber, 
+          curveNumber: pt.curveNumber,
+          pointNumber: pt.pointNumber,
           x: pt.x,
           y: pt.y
         };
-        
+
         // If 'z' is reported with the event data, then use it!
         if (pt.hasOwnProperty("z")) {
           obj.z = pt.z;
         }
-        
+
         if (pt.hasOwnProperty("customdata")) {
           obj.customdata = pt.customdata;
         }
-        
-        /* 
+
+        /*
           TL;DR: (I think) we have to select the graph div (again) to attach keys...
-          
-          Why? Remember that crosstalk will dynamically add/delete traces 
+
+          Why? Remember that crosstalk will dynamically add/delete traces
           (see traceManager.prototype.updateSelection() below)
           For this reason, we can't simply grab keys from x.data (like we did previously)
-          Moreover, we can't use _fullData, since that doesn't include 
-          unofficial attributes. It's true that click/hover events fire with 
+          Moreover, we can't use _fullData, since that doesn't include
+          unofficial attributes. It's true that click/hover events fire with
           pt.data, but drag events don't...
         */
         var gd = document.getElementById(el.id);
         var trace = gd.data[pt.curveNumber];
-        
+
         if (!trace._isSimpleKey) {
           var attrsToAttach = ["key"];
         } else {
@@ -1170,7 +1170,7 @@ HTMLWidgets.widget({
           obj.key = trace.key;
           var attrsToAttach = [];
         }
-        
+
         for (var i = 0; i < attrsToAttach.length; i++) {
           var attr = trace[attrsToAttach[i]];
           if (Array.isArray(attr)) {
@@ -1186,13 +1186,13 @@ HTMLWidgets.widget({
         return obj;
       });
     }
-    
-    
+
+
     var legendEventData = function(d) {
       // if legendgroup is not relevant just return the trace
       var trace = d.data[d.curveNumber];
       if (!trace.legendgroup) return trace;
-      
+
       // if legendgroup was specified, return all traces that match the group
       var legendgrps = d.data.map(function(trace){ return trace.legendgroup; });
       var traces = [];
@@ -1201,14 +1201,14 @@ HTMLWidgets.widget({
           traces.push(d.data[i]);
         }
       }
-      
+
       return traces;
     };
 
-    
+
     // send user input event data to shiny
     if (HTMLWidgets.shinyMode && Shiny.setInputValue) {
-      
+
       // Some events clear other input values
       // TODO: always register these?
       var eventClearMap = {
@@ -1216,7 +1216,7 @@ HTMLWidgets.widget({
         plotly_unhover: ["plotly_hover"],
         plotly_doubleclick: ["plotly_click"]
       };
-    
+
       Object.keys(eventClearMap).map(function(evt) {
         graphDiv.on(evt, function() {
           var inputsToClear = eventClearMap[evt];
@@ -1225,7 +1225,7 @@ HTMLWidgets.widget({
           });
         });
       });
-      
+
       var eventDataFunctionMap = {
         plotly_click: eventDataWithKey,
         plotly_sunburstclick: eventDataWithKey,
@@ -1233,7 +1233,7 @@ HTMLWidgets.widget({
         plotly_unhover: eventDataWithKey,
         // If 'plotly_selected' has already been fired, and you click
         // on the plot afterwards, this event fires `undefined`?!?
-        // That might be considered a plotly.js bug, but it doesn't make 
+        // That might be considered a plotly.js bug, but it doesn't make
         // sense for this input change to occur if `d` is falsy because,
         // even in the empty selection case, `d` is truthy (an object),
         // and the 'plotly_deselect' event will reset this input
@@ -1249,7 +1249,7 @@ HTMLWidgets.widget({
         plotly_legenddoubleclick: legendEventData,
         plotly_clickannotation: function(d) { return d.fullAnnotation }
       };
-      
+
       var registerShinyValue = function(event) {
         var eventDataPreProcessor = eventDataFunctionMap[event] || function(d) { return d ? d : el.id };
         // some events are unique to the R package
@@ -1263,53 +1263,53 @@ HTMLWidgets.widget({
           );
         });
       }
-    
+
       var shinyEvents = x.shinyEvents || [];
       shinyEvents.map(registerShinyValue);
     }
-    
+
     // Given an array of {curveNumber: x, pointNumber: y} objects,
     // return a hash of {
-    //   set1: {value: [key1, key2, ...], _isSimpleKey: false}, 
+    //   set1: {value: [key1, key2, ...], _isSimpleKey: false},
     //   set2: {value: [key3, key4, ...], _isSimpleKey: false}
     // }
     function pointsToKeys(points) {
       var keysBySet = {};
       for (var i = 0; i < points.length; i++) {
-        
+
         var trace = graphDiv.data[points[i].curveNumber];
         if (!trace.key || !trace.set) {
           continue;
         }
-        
+
         // set defaults for this keySet
-        // note that we don't track the nested property (yet) since we always 
+        // note that we don't track the nested property (yet) since we always
         // emit the union -- http://cpsievert.github.io/talks/20161212b/#21
         keysBySet[trace.set] = keysBySet[trace.set] || {
           value: [],
           _isSimpleKey: trace._isSimpleKey
         };
-        
+
         // Use pointNumber by default, but aggregated traces should emit pointNumbers
         var ptNum = points[i].pointNumber;
         var hasPtNum = typeof ptNum === "number";
         var ptNum = hasPtNum ? ptNum : points[i].pointNumbers;
-        
-        // selecting a point of a "simple" trace means: select the 
+
+        // selecting a point of a "simple" trace means: select the
         // entire key attached to this trace, which is useful for,
-        // say clicking on a fitted line to select corresponding observations 
+        // say clicking on a fitted line to select corresponding observations
         var key = trace._isSimpleKey ? trace.key : Array.isArray(ptNum) ? ptNum.map(function(idx) { return trace.key[idx]; }) : trace.key[ptNum];
         // http://stackoverflow.com/questions/10865025/merge-flatten-an-array-of-arrays-in-javascript
         var keyFlat = trace._isNestedKey ? [].concat.apply([], key) : key;
-        
+
         // TODO: better to only add new values?
         keysBySet[trace.set].value = keysBySet[trace.set].value.concat(keyFlat);
       }
-      
+
       return keysBySet;
     }
-    
-    
+
+
     x.highlight.color = x.highlight.color || [];
     // make sure highlight color is an array
     if (!Array.isArray(x.highlight.color)) {
@@ -1331,23 +1331,23 @@ HTMLWidgets.widget({
 
     // register event listeners for all sets
     for (var i = 0; i < allSets.length; i++) {
-      
+
       var set = allSets[i];
       var selection = new crosstalk.SelectionHandle(set);
       var filter = new crosstalk.FilterHandle(set);
-      
+
       var filterChange = function(e) {
         removeBrush(el);
         traceManager.updateFilter(set, e.value);
       };
       filter.on("change", filterChange);
-      
-      
+
+
       var selectionChange = function(e) {
-        
+
         // Workaround for 'plotly_selected' now firing previously selected
         // points (in addition to new ones) when holding shift key. In our case,
-        // we just want the new keys 
+        // we just want the new keys
         if (x.highlight.on === "plotly_selected" && x.highlight.persistentShift) {
           // https://stackoverflow.com/questions/1187518/how-to-get-the-difference-between-two-arrays-in-javascript
           Array.prototype.diff = function(a) {
@@ -1355,12 +1355,12 @@ HTMLWidgets.widget({
           };
           e.value = e.value.diff(e.oldValue);
         }
-        
+
         // array of "event objects" tracking the selection history
         // this is used to avoid adding redundant selections
         var selectionHistory = crosstalk.var("plotlySelectionHistory").get() || [];
-        
-        // Construct an event object "defining" the current event. 
+
+        // Construct an event object "defining" the current event.
         var event = {
           receiverID: traceManager.gd.id,
           plotlySelectionColour: crosstalk.group(set).var("plotlySelectionColour").get()
@@ -1376,7 +1376,7 @@ HTMLWidgets.widget({
             }
           }
         }
-        
+
         // accumulate history for persistent selection
         if (!x.highlight.persistent) {
           selectionHistory = [event];
@@ -1384,7 +1384,7 @@ HTMLWidgets.widget({
           selectionHistory.push(event);
         }
         crosstalk.var("plotlySelectionHistory").set(selectionHistory);
-        
+
         // do the actual updating of traces, frames, and the selectize widget
         traceManager.updateSelection(set, e.value);
         // https://github.com/selectize/selectize.js/blob/master/docs/api.md#methods_items
@@ -1397,7 +1397,7 @@ HTMLWidgets.widget({
         }
       }
       selection.on("change", selectionChange);
-      
+
       // Set a crosstalk variable selection value, triggering an update
       var turnOn = function(e) {
         if (e) {
@@ -1414,7 +1414,7 @@ HTMLWidgets.widget({
         turnOn = debounce(turnOn, x.highlight.debounce);
       }
       graphDiv.on(x.highlight.on, turnOn);
-      
+
       graphDiv.on(x.highlight.off, function turnOff(e) {
         // remove any visual clues
         removeBrush(el);
@@ -1423,7 +1423,7 @@ HTMLWidgets.widget({
         // trigger the actual removal of selection traces
         selection.set(null, {sender: el});
       });
-          
+
       // register a callback for selectize so that there is bi-directional
       // communication between the widget and direct manipulation events
       if (x.selectize) {
@@ -1439,7 +1439,7 @@ HTMLWidgets.widget({
         };
         var select = $("#" + selectizeID).find("select")[0];
         var selectize = $(select).selectize(opts)[0].selectize;
-        // NOTE: this callback is triggered when *directly* altering 
+        // NOTE: this callback is triggered when *directly* altering
         // dropdown items
         selectize.on("change", function() {
           var currentItems = traceManager.groupSelections[set] || [];
@@ -1449,21 +1449,21 @@ HTMLWidgets.widget({
               selectize.removeItem(currentItems[i], true);
             }
           }
-          var newItems = selectize.items.filter(function(idx) { 
+          var newItems = selectize.items.filter(function(idx) {
             return currentItems.indexOf(idx) < 0;
           });
           if (newItems.length > 0) {
             traceManager.updateSelection(set, newItems);
           } else {
             // Item has been removed...
-            // TODO: this logic won't work for dynamically changing palette 
+            // TODO: this logic won't work for dynamically changing palette
             traceManager.updateSelection(set, null);
             traceManager.updateSelection(set, selectize.items);
           }
         });
       }
     } // end of selectionChange
-    
+
   } // end of renderValue
 }); // end of widget definition
 
@@ -1476,10 +1476,10 @@ function TraceManager(graphDiv, highlight) {
   this.gd = graphDiv;
 
   // Preserve the original data.
-  // TODO: try using Lib.extendFlat() as done in  
-  // https://github.com/plotly/plotly.js/pull/1136 
+  // TODO: try using Lib.extendFlat() as done in
+  // https://github.com/plotly/plotly.js/pull/1136
   this.origData = JSON.parse(JSON.stringify(graphDiv.data));
-  
+
   // avoid doing this over and over
   this.origOpacity = [];
   for (var i = 0; i < this.origData.length; i++) {
@@ -1489,7 +1489,7 @@ function TraceManager(graphDiv, highlight) {
   // key: group name, value: null or array of keys representing the
   // most recently received selection for that group.
   this.groupSelections = {};
-  
+
   // selection parameters (e.g., transient versus persistent selection)
   this.highlight = highlight;
 }
@@ -1501,11 +1501,11 @@ TraceManager.prototype.close = function() {
 TraceManager.prototype.updateFilter = function(group, keys) {
 
   if (typeof(keys) === "undefined" || keys === null) {
-    
+
     this.gd.data = JSON.parse(JSON.stringify(this.origData));
-    
+
   } else {
-  
+
     var traces = [];
     for (var i = 0; i < this.origData.length; i++) {
       var trace = this.origData[i];
@@ -1514,7 +1514,7 @@ TraceManager.prototype.updateFilter = function(group, keys) {
       }
       var matchFunc = getMatchFunc(trace);
       var matches = matchFunc(trace.key, keys);
-      
+
       if (matches.length > 0) {
         if (!trace._isSimpleKey) {
           // subsetArrayAttrs doesn't mutate trace (it makes a modified clone)
@@ -1525,21 +1525,21 @@ TraceManager.prototype.updateFilter = function(group, keys) {
     }
     this.gd.data = traces;
   }
-  
+
   Plotly.redraw(this.gd);
-  
+
   // NOTE: we purposely do _not_ restore selection(s), since on filter,
-  // axis likely will update, changing the pixel -> data mapping, leading 
+  // axis likely will update, changing the pixel -> data mapping, leading
   // to a likely mismatch in the brush outline and highlighted marks
-  
+
 };
 
 TraceManager.prototype.updateSelection = function(group, keys) {
-  
+
   if (keys !== null && !Array.isArray(keys)) {
     throw new Error("Invalid keys argument; null or array expected");
   }
-  
+
   // if selection has been cleared, or if this is transient
   // selection, delete the "selection traces"
   var nNewTraces = this.gd.data.length - this.origData.length;
@@ -1561,22 +1561,22 @@ TraceManager.prototype.updateSelection = function(group, keys) {
       }
     }
   }
-  
+
   if (keys === null) {
-    
+
     Plotly.restyle(this.gd, {"opacity": this.origOpacity});
-    
+
   } else if (keys.length >= 1) {
-    
+
     // placeholder for new "selection traces"
     var traces = [];
     // this variable is set in R/highlight.R
-    var selectionColour = crosstalk.group(group).var("plotlySelectionColour").get() || 
+    var selectionColour = crosstalk.group(group).var("plotlySelectionColour").get() ||
       this.highlight.color[0];
 
     for (var i = 0; i < this.origData.length; i++) {
-      // TODO: try using Lib.extendFlat() as done in  
-      // https://github.com/plotly/plotly.js/pull/1136 
+      // TODO: try using Lib.extendFlat() as done in
+      // https://github.com/plotly/plotly.js/pull/1136
       var trace = JSON.parse(JSON.stringify(this.gd.data[i]));
       if (!trace.key || trace.set !== group) {
         continue;
@@ -1584,25 +1584,25 @@ TraceManager.prototype.updateSelection = function(group, keys) {
       // Get sorted array of matching indices in trace.key
       var matchFunc = getMatchFunc(trace);
       var matches = matchFunc(trace.key, keys);
-      
+
       if (matches.length > 0) {
         // If this is a "simple" key, that means select the entire trace
         if (!trace._isSimpleKey) {
           trace = subsetArrayAttrs(trace, matches);
         }
-        // reach into the full trace object so we can properly reflect the 
+        // reach into the full trace object so we can properly reflect the
         // selection attributes in every view
         var d = this.gd._fullData[i];
-        
-        /* 
-        / Recursively inherit selection attributes from various sources, 
+
+        /*
+        / Recursively inherit selection attributes from various sources,
         / in order of preference:
         /  (1) official plotly.js selected attribute
         /  (2) highlight(selected = attrs_selected(...))
         */
         // TODO: it would be neat to have a dropdown to dynamically specify these!
         $.extend(true, trace, this.highlight.selected);
-        
+
         // if it is defined, override color with the "dynamic brush color""
         if (d.marker) {
           trace.marker = trace.marker || {};
@@ -1623,7 +1623,7 @@ TraceManager.prototype.updateSelection = function(group, keys) {
         // attach a sensible name/legendgroup
         trace.name = trace.name || keys.join("<br />");
         trace.legendgroup = trace.legendgroup || keys.join("<br />");
-        
+
         // keep track of mapping between this new trace and the trace it targets
         // (necessary for updating frames to reflect the selection traces)
         trace._originalIndex = i;
@@ -1632,18 +1632,18 @@ TraceManager.prototype.updateSelection = function(group, keys) {
         traces.push(trace);
       }
     }
-    
+
     if (traces.length > 0) {
-      
+
       Plotly.addTraces(this.gd, traces).then(function(gd) {
         // incrementally add selection traces to frames
-        // (this is heavily inspired by Plotly.Plots.modifyFrames() 
+        // (this is heavily inspired by Plotly.Plots.modifyFrames()
         // in src/plots/plots.js)
         var _hash = gd._transitionData._frameHash;
         var _frames = gd._transitionData._frames || [];
-        
+
         for (var i = 0; i < _frames.length; i++) {
-          
+
           // add to _frames[i].traces *if* this frame references selected trace(s)
           var newIndices = [];
           for (var j = 0; j < traces.length; j++) {
@@ -1653,24 +1653,24 @@ TraceManager.prototype.updateSelection = function(group, keys) {
               _frames[i].traces.push(tr._newIndex);
             }
           }
-          
+
           // nothing to do...
           if (newIndices.length === 0) {
             continue;
           }
-          
+
           var ctr = 0;
           var nFrameTraces = _frames[i].data.length;
-          
+
           for (var j = 0; j < nFrameTraces; j++) {
             var frameTrace = _frames[i].data[j];
             if (!frameTrace.key || frameTrace.set !== group) {
               continue;
             }
-            
+
             var matchFunc = getMatchFunc(frameTrace);
             var matches = matchFunc(frameTrace.key, keys);
-            
+
             if (matches.length > 0) {
               if (!trace._isSimpleKey) {
                 frameTrace = subsetArrayAttrs(frameTrace, matches);
@@ -1689,19 +1689,19 @@ TraceManager.prototype.updateSelection = function(group, keys) {
               _frames[i].data.push(frameTrace);
             }
           }
-          
+
           // update gd._transitionData._frameHash
           _hash[_frames[i].name] = _frames[i];
         }
-      
+
       });
-      
+
       // dim traces that have a set matching the set of selection sets
       var tracesToDim = [],
           opacities = [],
           sets = Object.keys(this.groupSelections),
           n = this.origData.length;
-          
+
       for (var i = 0; i < n; i++) {
         var opacity = this.origOpacity[i] || 1;
         // have we already dimmed this trace? Or is this even worth doing?
@@ -1715,28 +1715,28 @@ TraceManager.prototype.updateSelection = function(group, keys) {
           opacities.push(opacity * this.highlight.opacityDim);
         }
       }
-      
+
       if (tracesToDim.length > 0) {
         Plotly.restyle(this.gd, {"opacity": opacities}, tracesToDim);
         // turn off the selected/unselected API
         Plotly.restyle(this.gd, {"selectedpoints": null});
       }
-      
+
     }
-    
+
   }
 };
 
-/* 
+/*
 Note: in all of these match functions, we assume needleSet (i.e. the selected keys)
 is a 1D (or flat) array. The real difference is the meaning of haystack.
-findMatches() does the usual thing you'd expect for 
-linked brushing on a scatterplot matrix. findSimpleMatches() returns a match iff 
-haystack is a subset of the needleSet. findNestedMatches() returns 
+findMatches() does the usual thing you'd expect for
+linked brushing on a scatterplot matrix. findSimpleMatches() returns a match iff
+haystack is a subset of the needleSet. findNestedMatches() returns
 */
 
 function getMatchFunc(trace) {
-  return (trace._isNestedKey) ? findNestedMatches : 
+  return (trace._isNestedKey) ? findNestedMatches :
     (trace._isSimpleKey) ? findSimpleMatches : findMatches;
 }
 
@@ -1756,7 +1756,7 @@ function findSimpleMatches(haystack, needleSet) {
   var match = haystack.every(function(val) {
     return val === null || needleSet.indexOf(val) >= 0;
   });
-  // yes, this doesn't make much sense other than conforming 
+  // yes, this doesn't make much sense other than conforming
   // to the output type of the other match functions
   return (match) ? [0] : []
 }
@@ -1766,8 +1766,8 @@ function findNestedMatches(haystack, needleSet) {
   var matches = [];
   for (var i = 0; i < haystack.length; i++) {
     var hay = haystack[i];
-    var match = hay.every(function(val) { 
-      return val === null || needleSet.indexOf(val) >= 0; 
+    var match = hay.every(function(val) {
+      return val === null || needleSet.indexOf(val) >= 0;
     });
     if (match) {
       matches.push(i);
@@ -1815,7 +1815,7 @@ function subsetArray(arr, indices) {
   return result;
 }
 
-// Convenience function for removing plotly's brush 
+// Convenience function for removing plotly's brush
 function removeBrush(el) {
   var outlines = el.querySelectorAll(".select-outline");
   for (var i = 0; i < outlines.length; i++) {
@@ -1931,9 +1931,9 @@ e.exports=function(t){return null!=t&&(n(t)||function(t){return"function"==typeo
 </head>
 <body style="background-color: white;">
 <div id="htmlwidget_container">
-  <div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-319b2c3c39af6365aebc" style="width:100%;height:400px;"></div>
+  <div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-81a6c253eb6096c16efa" style="width:100%;height:400px;"></div>
 </div>
-<script type="application/json" data-for="htmlwidget-319b2c3c39af6365aebc">{"x":{"data":[{"x":[0.00719825658651788,0.0175628132426991,0.00765377433629322,0.017836178176776,0.00894894047892116,0.0130539260776778,0.010489133645516,0.00559285866843867,0.00859785344296863,0.0309246451082438,0.00662794939248606,0.0072446273244106,0.0271098002099287,0.00683349583229178,0.0235248945031487,0.0066510506222686,0.0557540783952875,0.00849359992203099,0.0107076412906322,0.00696358260928168,0.00892619701865235,0.00622871726941384,0.0362772804041798,0.00738559124762921,0.0181884765385766,0.00735980372755421,0.0352677161654308,0.00926069276460059,0.00853838545365997,0.00574299810472101,0.00890589088527069,0.00855499764305118,0.00500956451020492,0.00391213858998501,0.00558233661095471,0.00547404391985733,0.0110005829032983],"y":[0.104355206829948,0.104355206829948,0.104355206829948,0.104355206829948,0.104355206829948,0.104355206829948,0.104355206829948,0.07974340038959,0.104355206829948,0.104355206829948,0.104355206829948,0.104355206829948,0.104355206829948,0.104355206829948,0.104355206829948,0.104355206829948,0.104355206829948,0.104355206829948,0.104355206829948,0.104355206829948,0.104355206829948,0.0900763772643971,0.104355206829948,0.104355206829948,0.104355206829948,0.104355206829948,0.104355206829948,0.104355206829948,0.104355206829948,0.0900763772643971,0.104355206829948,0.104355206829948,0.0618653172275202,0.00274472716432099,0.0900763772643971,0.0900763772643971,0.104355206829948],"text":["sim_retrieval_average_precision_ref_i_mean_i: 0.007198257<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_900041:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.017562813<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_900288:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.007653774<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_900475:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.017836178<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_900832:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.008948940<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_901127:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.013053926<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_903189:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.010489134<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_904840:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.005592859<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.079743400<br />JCP2022_905399:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.008597853<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_905771:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.030924645<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_906380:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.006627949<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_906612:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.007244627<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_908011:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.027109800<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_908657:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.006833496<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_909454:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.023524895<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_909950:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.006651051<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_909963:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.055754078<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_909964:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.008493600<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_910068:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.010707641<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_910221:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.006963583<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_910227:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.008926197<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_910322:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.006228717<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.090076377<br />JCP2022_910323:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.036277280<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_910367:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.007385591<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_910508:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.018188477<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_910525:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.007359804<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_910554:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.035267716<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_910651:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.009260693<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_910692:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.008538385<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_910796:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.005742998<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.090076377<br />JCP2022_910867:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.008905891<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_911208:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.008554998<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_911569:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.005009565<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.061865317<br />JCP2022_912584:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.003912139<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.002744727<br />JCP2022_912974:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.005582337<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.090076377<br />JCP2022_912981:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.005474044<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.090076377<br />JCP2022_912995:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.011000583<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207<br />JCP2022_914534:pert"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(0,0,0,1)","opacity":1,"size":5.66929133858268,"symbol":"circle","line":{"width":1.88976377952756,"color":"rgba(0,0,0,1)"}},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[-0.0422134043585251,-0.0224137439850839,-0.0213230540358127,-0.0181428058410804,-0.00253078711898602,0.0281748990034749,-0.0382721598793602,0.0258849917380359,0.0481536037179994,0.0661900246470034,0.039076379542302,0.0552400956000321,0.0362418056472059,-0.00697435973746574,0.0321123709978707,0.00267724786109386,0.070025406481321,0.00378033213560266,0.00812290514832468,-0.0134456985234611,0.0576252381021074,0.0346796543030448,0.058498990401573,0.0122204504372066,0.0480319155839387,-0.0411278102745246,0.0638322057517096,-0.0131776987197196,-0.0370878468071782,-0.0256525993485081,-0.0207666628542398,0.0145967160105384,0.0356287947712774,0.0393992729022645,0.0422243849791852,0.0412522502505814,0.0350629342036794],"y":[0.00672630562957889,0.0938703235010482,0.155641298997668,0.146524008666617,0.157102943840889,0.186322680931059,0.124969659676296,0.0263230234722426,0.116887185280663,0.0774076055507041,0.0736938018589146,0.132044761279119,0.140668118861956,0.196163327456904,0.139649122884018,0.197051776224268,0.140994576900718,0.0634296065433747,0.190009075473515,0.0104937324072099,0.111133564287317,0.00361846361605998,0.0340443766913242,0.158620817470816,0.202639538166565,0.0943485537781245,0.0907232203758187,0.125600061356542,0.158309079218177,0.126086604057984,0.0143330886266059,0.0880590405552513,0.140127341600336,-0.0374346984067928,0.0793027783959973,0.0847272630996871,0.144465733808917],"text":["sim_retrieval_average_precision_ref_i_mean_i: 0.007198257<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.017562813<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.007653774<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.017836178<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.008948940<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.013053926<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.010489134<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.005592859<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.079743400","sim_retrieval_average_precision_ref_i_mean_i: 0.008597853<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.030924645<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.006627949<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.007244627<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.027109800<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.006833496<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.023524895<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.006651051<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.055754078<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.008493600<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.010707641<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.006963583<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.008926197<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.006228717<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.090076377","sim_retrieval_average_precision_ref_i_mean_i: 0.036277280<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.007385591<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.018188477<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.007359804<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.035267716<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.009260693<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.008538385<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.005742998<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.090076377","sim_retrieval_average_precision_ref_i_mean_i: 0.008905891<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.008554998<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207","sim_retrieval_average_precision_ref_i_mean_i: 0.005009565<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.061865317","sim_retrieval_average_precision_ref_i_mean_i: 0.003912139<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.002744727","sim_retrieval_average_precision_ref_i_mean_i: 0.005582337<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.090076377","sim_retrieval_average_precision_ref_i_mean_i: 0.005474044<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.090076377","sim_retrieval_average_precision_ref_i_mean_i: 0.011000583<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.104355207"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","opacity":0.1,"size":5.66929133858268,"symbol":"circle","line":{"width":1.88976377952756,"color":"rgba(255,0,0,1)"}},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[-0.0478253449005174,0.0756373470233133],"y":[1.30102999566398,1.30102999566398],"text":"yintercept: 1.30103","type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(0,0,0,1)","dash":"solid"},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":26.2283105022831,"r":7.30593607305936,"b":40.1826484018265,"l":43.1050228310502},"plot_bgcolor":"rgba(255,255,255,1)","paper_bgcolor":"rgba(255,255,255,1)","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"xaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-0.0478253449005174,0.0756373470233133],"tickmode":"array","ticktext":["-0.025","0.000","0.025","0.050","0.075"],"tickvals":[-0.025,0,0.025,0.05,0.075],"categoryorder":"array","categoryarray":["-0.025","0.000","0.025","0.050","0.075"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.65296803652968,"tickwidth":0.66417600664176,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y","title":{"text":"sim_retrieval_average_precision_ref_i_mean_i","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"yaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-0.104357933110332,1.36795323036752],"tickmode":"array","ticktext":["0.0","0.5","1.0"],"tickvals":[0,0.5,1],"categoryorder":"array","categoryarray":["0.0","0.5","1.0"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.65296803652968,"tickwidth":0.66417600664176,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":{"text":"sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":"transparent","line":{"color":"rgba(51,51,51,1)","width":0.66417600664176,"linetype":"solid"},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0,"y1":1}],"showlegend":false,"legend":{"bgcolor":"rgba(255,255,255,1)","bordercolor":"transparent","borderwidth":1.88976377952756,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.689497716895}},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"source":"A","attrs":{"b9ba41ca6a3e":{"x":{},"y":{},"text":{},"type":"scatter"},"b9ba50052e30":{"x":{},"y":{}},"b9ba41b7a5b":{"yintercept":{}}},"cur_data":"b9ba41ca6a3e","visdat":{"b9ba41ca6a3e":["function (y) ","x"],"b9ba50052e30":["function (y) ","x"],"b9ba41b7a5b":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
-<script type="application/htmlwidget-sizing" data-for="htmlwidget-319b2c3c39af6365aebc">{"viewer":{"width":"100%","height":400,"padding":0,"fill":true},"browser":{"width":"100%","height":400,"padding":0,"fill":true}}</script>
+<script type="application/json" data-for="htmlwidget-81a6c253eb6096c16efa">{"x":{"data":[{"x":[0.00868729549153169,0.0100078459346391,0.0137458907891339,0.00765415464841479,0.0231524474591015,0.0111677212040067,0.0064719830930603,0.00908724764001493,0.0058735128745335,0.0287606424268037,0.0152733292035023,0.00827187184019445,0.0316109121199824,0.0102633291473089,0.0215156003861774,0.0091553735969986,0.0429291727326333,0.00846643220757716,0.00837494746473995,0.0677961545853176,0.0209327536048588,0.00724001713088603,0.0373812713811261,0.00769061661234018,0.0205246269427216,0.00690817814636196,0.0203337065172131,0.0085758382592809,0.00632640398566536,0.0060534224790017,0.00914457594298982,0.0114454773693568,0.00483764409745889,0.00511086403831144,0.00662337975545466,0.0207179494837396,0.0102805941003631],"y":[0.137159744272274,0.137159744272274,0.137159744272274,0.137159744272274,0.137159744272274,0.137159744272274,0.115898073702196,0.135654287444368,0.103556888000883,0.219790333699476,0.137159744272274,0.137159744272274,0.219790333699476,0.137159744272274,0.137159744272274,0.137159744272274,0.219790333699476,0.137159744272274,0.137159744272274,0.219790333699476,0.219790333699476,0.115898073702196,0.219790333699476,0.137159744272274,0.219790333699476,0.115898073702196,0.137159744272274,0.137159744272274,0.115898073702196,0.115898073702196,0.137159744272274,0.137159744272274,0.0416332061358843,0.0749512313770511,0.115898073702196,0.137159744272274,0.137159744272274],"text":["sim_retrieval_average_precision_ref_i_mean_i: 0.008687295<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_900041:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.010007846<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_900288:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.013745891<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_900475:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.007654155<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_900832:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.023152447<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_901127:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.011167721<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_903189:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.006471983<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.11589807<br />JCP2022_904840:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.009087248<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13565429<br />JCP2022_905399:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.005873513<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.10355689<br />JCP2022_905771:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.028760642<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.21979033<br />JCP2022_906380:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.015273329<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_906612:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.008271872<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_908011:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.031610912<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.21979033<br />JCP2022_908657:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.010263329<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_909454:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.021515600<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_909950:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.009155374<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_909963:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.042929173<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.21979033<br />JCP2022_909964:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.008466432<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_910068:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.008374947<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_910221:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.067796155<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.21979033<br />JCP2022_910227:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.020932754<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.21979033<br />JCP2022_910322:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.007240017<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.11589807<br />JCP2022_910323:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.037381271<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.21979033<br />JCP2022_910367:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.007690617<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_910508:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.020524627<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.21979033<br />JCP2022_910525:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.006908178<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.11589807<br />JCP2022_910554:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.020333707<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_910651:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.008575838<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_910692:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.006326404<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.11589807<br />JCP2022_910796:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.006053422<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.11589807<br />JCP2022_910867:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.009144576<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_911208:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.011445477<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_911569:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.004837644<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.04163321<br />JCP2022_912584:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.005110864<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.07495123<br />JCP2022_912974:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.006623380<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.11589807<br />JCP2022_912981:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.020717949<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_912995:pert","sim_retrieval_average_precision_ref_i_mean_i: 0.010280594<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974<br />JCP2022_914534:pert"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(0,0,0,1)","opacity":1,"size":5.66929133858268,"symbol":"circle","line":{"width":1.88976377952756,"color":"rgba(0,0,0,1)"}},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[0.0406108746367546,0.0114979100396581,0.0320703317629448,-0.0353636679953272,-0.0266358029657976,-0.0374210607628211,-0.0294316155545044,0.0211903700196457,0.0179523127406734,-0.00470899861886354,0.0559547810419658,0.0170535825030735,0.0745958648277573,-0.0198846362215059,0.00470382473721094,0.00417542808730408,0.00982453947211502,0.0343795789976942,0.0268964247235042,0.0308739682516315,0.0695548636950773,0.0213836376088753,0.0868434489622799,0.0395037835315045,-0.0258980212543183,0.00354046996533091,0.00867359430945766,-0.0359317122820306,0.0501697069778379,0.0208997850716541,-0.027462126218963,0.0542440777152068,0.0331818498876582,0.0014330767558073,0.0371219396448383,0.0477594157151975,0.0335635536686774],"y":[0.13695208779004,0.235897538852212,0.228375504905624,0.182963350223643,0.0586158125608091,0.212525446893913,0.160069944528008,0.147445571407616,0.0471802773045668,0.259392724283081,0.194114976324407,0.144980511715901,0.224196648974013,0.122445623897282,0.0474432356602375,0.200127625134108,0.18307246608105,0.0871249743684058,0.199049223302198,0.209484883727547,0.144253375384998,0.0451277254196651,0.177997645786074,0.180063533405108,0.132282886099112,0.187404863773922,0.133119853720335,0.203146394057465,0.166964948927129,0.0761088946415879,0.0468180975823526,0.112185191916568,0.114658905049146,0.142901750923918,0.0451917104936041,0.220747585775596,0.0471062096248243],"text":["sim_retrieval_average_precision_ref_i_mean_i: 0.008687295<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974","sim_retrieval_average_precision_ref_i_mean_i: 0.010007846<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974","sim_retrieval_average_precision_ref_i_mean_i: 0.013745891<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974","sim_retrieval_average_precision_ref_i_mean_i: 0.007654155<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974","sim_retrieval_average_precision_ref_i_mean_i: 0.023152447<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974","sim_retrieval_average_precision_ref_i_mean_i: 0.011167721<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974","sim_retrieval_average_precision_ref_i_mean_i: 0.006471983<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.11589807","sim_retrieval_average_precision_ref_i_mean_i: 0.009087248<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13565429","sim_retrieval_average_precision_ref_i_mean_i: 0.005873513<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.10355689","sim_retrieval_average_precision_ref_i_mean_i: 0.028760642<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.21979033","sim_retrieval_average_precision_ref_i_mean_i: 0.015273329<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974","sim_retrieval_average_precision_ref_i_mean_i: 0.008271872<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974","sim_retrieval_average_precision_ref_i_mean_i: 0.031610912<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.21979033","sim_retrieval_average_precision_ref_i_mean_i: 0.010263329<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974","sim_retrieval_average_precision_ref_i_mean_i: 0.021515600<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974","sim_retrieval_average_precision_ref_i_mean_i: 0.009155374<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974","sim_retrieval_average_precision_ref_i_mean_i: 0.042929173<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.21979033","sim_retrieval_average_precision_ref_i_mean_i: 0.008466432<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974","sim_retrieval_average_precision_ref_i_mean_i: 0.008374947<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974","sim_retrieval_average_precision_ref_i_mean_i: 0.067796155<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.21979033","sim_retrieval_average_precision_ref_i_mean_i: 0.020932754<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.21979033","sim_retrieval_average_precision_ref_i_mean_i: 0.007240017<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.11589807","sim_retrieval_average_precision_ref_i_mean_i: 0.037381271<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.21979033","sim_retrieval_average_precision_ref_i_mean_i: 0.007690617<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974","sim_retrieval_average_precision_ref_i_mean_i: 0.020524627<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.21979033","sim_retrieval_average_precision_ref_i_mean_i: 0.006908178<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.11589807","sim_retrieval_average_precision_ref_i_mean_i: 0.020333707<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974","sim_retrieval_average_precision_ref_i_mean_i: 0.008575838<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974","sim_retrieval_average_precision_ref_i_mean_i: 0.006326404<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.11589807","sim_retrieval_average_precision_ref_i_mean_i: 0.006053422<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.11589807","sim_retrieval_average_precision_ref_i_mean_i: 0.009144576<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974","sim_retrieval_average_precision_ref_i_mean_i: 0.011445477<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974","sim_retrieval_average_precision_ref_i_mean_i: 0.004837644<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.04163321","sim_retrieval_average_precision_ref_i_mean_i: 0.005110864<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.07495123","sim_retrieval_average_precision_ref_i_mean_i: 0.006623380<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.11589807","sim_retrieval_average_precision_ref_i_mean_i: 0.020717949<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974","sim_retrieval_average_precision_ref_i_mean_i: 0.010280594<br />sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i: 0.13715974"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(255,0,0,1)","opacity":0.1,"size":5.66929133858268,"symbol":"circle","line":{"width":1.88976377952756,"color":"rgba(255,0,0,1)"}},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[-0.0436342862490761,0.093056674448535],"y":[1.30102999566398,1.30102999566398],"text":"yintercept: 1.30103","type":"scatter","mode":"lines","line":{"width":1.88976377952756,"color":"rgba(0,0,0,1)","dash":"solid"},"hoveron":"points","showlegend":false,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":26.2283105022831,"r":7.30593607305936,"b":40.1826484018265,"l":43.1050228310502},"plot_bgcolor":"rgba(255,255,255,1)","paper_bgcolor":"rgba(255,255,255,1)","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187},"xaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-0.0436342862490761,0.093056674448535],"tickmode":"array","ticktext":["0.00","0.05"],"tickvals":[0,0.05],"categoryorder":"array","categoryarray":["0.00","0.05"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.65296803652968,"tickwidth":0.66417600664176,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"y","title":{"text":"sim_retrieval_average_precision_ref_i_mean_i","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"yaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-0.0213366333405205,1.36399983514039],"tickmode":"array","ticktext":["0.0","0.5","1.0"],"tickvals":[0,0.5,1],"categoryorder":"array","categoryarray":["0.0","0.5","1.0"],"nticks":null,"ticks":"outside","tickcolor":"rgba(51,51,51,1)","ticklen":3.65296803652968,"tickwidth":0.66417600664176,"showticklabels":true,"tickfont":{"color":"rgba(77,77,77,1)","family":"","size":11.689497716895},"tickangle":-0,"showline":false,"linecolor":null,"linewidth":0,"showgrid":true,"gridcolor":"rgba(235,235,235,1)","gridwidth":0.66417600664176,"zeroline":false,"anchor":"x","title":{"text":"sim_retrieval_average_precision_ref_i_nlog10qvalue_mean_i","font":{"color":"rgba(0,0,0,1)","family":"","size":14.6118721461187}},"hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":"transparent","line":{"color":"rgba(51,51,51,1)","width":0.66417600664176,"linetype":"solid"},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0,"y1":1}],"showlegend":false,"legend":{"bgcolor":"rgba(255,255,255,1)","bordercolor":"transparent","borderwidth":1.88976377952756,"font":{"color":"rgba(0,0,0,1)","family":"","size":11.689497716895}},"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false},"source":"A","attrs":{"d2297eb28104":{"x":{},"y":{},"text":{},"type":"scatter"},"d22979346e97":{"x":{},"y":{}},"d2296148b9ab":{"yintercept":{}}},"cur_data":"d2297eb28104","visdat":{"d2297eb28104":["function (y) ","x"],"d22979346e97":["function (y) ","x"],"d2296148b9ab":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+<script type="application/htmlwidget-sizing" data-for="htmlwidget-81a6c253eb6096c16efa">{"viewer":{"width":"100%","height":400,"padding":0,"fill":true},"browser":{"width":"100%","height":400,"padding":0,"fill":true}}</script>
 </body>
 </html>
